@@ -32,6 +32,11 @@ This project was developed during my first week as an intern at Link Development
 ### API Versioning
 - **API Versioning**: The project supports API versioning, allowing for version-specific routing and easier management of API evolution.
 
+### Message Queuing
+- **RabbitMQ Integration**: The project now includes RabbitMQ for message queuing. This allows for asynchronous communication and better scalability.
+  - **Message Publishing**: A new endpoint in `MessageController` allows clients to publish messages to a RabbitMQ queue.
+  - **Message Consuming**: A `MessageConsumer` background service continuously listens for messages on the queue, processes them, and logs the content to a file.
+
 ### Publishing and Deploying 
 - **IIS**: During the development of this project, I also learned how to publish and deploy an ASP.NET Core application on Internet Information Services (IIS). This involves:
 
@@ -45,5 +50,6 @@ This project was developed during my first week as an intern at Link Development
 - **CORS**: For handling cross-origin requests.
 - **AspNetCoreRateLimit**: For implementing rate limiting.
 - **API Versioning**: For managing API versions.
+- **RabbitMQ**: For message queuing and asynchronous processing.
 
 
