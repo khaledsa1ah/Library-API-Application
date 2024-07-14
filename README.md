@@ -1,4 +1,4 @@
-# Day1 API Project
+# API Project
 
 ## Overview
 This project was developed during my first week as an intern at Link Development. It is an ASP.NET Core Web API that implements various features and best practices, including authentication, logging, caching, rate limiting, and API versioning. The API includes endpoints for weather forecasting and user authentication.
