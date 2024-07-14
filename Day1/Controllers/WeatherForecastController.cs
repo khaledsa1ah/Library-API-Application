@@ -3,13 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Microsoft.Extensions.Caching.Memory;
-using System.Collections.Generic;
-using System.Linq;
 using Day1.Data;
 
 namespace Day1.Controllers
 {
-    [ApiController]    
+    [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")]
     [Authorize]
@@ -53,5 +51,6 @@ namespace Day1.Controllers
 
             return weatherForecasts;
         }
+
     }
 }

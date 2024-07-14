@@ -8,6 +8,7 @@ using Serilog;
 using AspNetCoreRateLimit;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Mvc;
+using Day1.Services;
 
 namespace Day1
 {
@@ -22,6 +23,9 @@ namespace Day1
                 options.Filters.Add<PermissionBasedAuthorizationFilter>();
             }
             );
+            builder.Services.AddSingleton<RabbitMQService>();
+            builder.Services.AddHostedService<MessageConsumer>();
+
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -116,6 +120,8 @@ namespace Day1
             builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
             builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
             builder.Services.AddInMemoryRateLimiting();
+
+
 
             var app = builder.Build();
 
