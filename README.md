@@ -1,49 +1,80 @@
-# API Project
+# API Project - Library Management System
 
 ## Overview
-This project was developed during my first week as an intern at Link Development. It is an ASP.NET Core Web API that implements various features and best practices, including authentication, logging, caching, rate limiting, and API versioning. The API includes endpoints for weather forecasting and user authentication.
+This project, developed during my internship at Link Development, is an ASP.NET Core Web API that implements a Library Management System. It showcases various features and best practices in API development, including authentication, authorization, logging, caching, rate limiting, API versioning, and message queuing.
 
 ## Features
 
-### Authentication
-- **JWT Authentication**: The project uses JSON Web Tokens (JWT) to handle authentication. The `UserController` provides an endpoint for user authentication, generating and returning a JWT on successful login. The JWT is then used to secure other endpoints.
+### Library Management
+- **Books**: CRUD operations for managing books in the library.
+- **Authors**: Endpoints for managing author information.
+- **Categories**: API for handling book categories.
 
-### Authorization
-- **Permission-Based Authorization**: Custom authorization filters are implemented to enforce permission-based access control on API endpoints.
+### Authentication and Authorization
+- **JWT Authentication**: Uses JSON Web Tokens for secure user authentication.
+- **Permission-Based Authorization**: Custom filters enforce role-based access control on API endpoints.
 
-### Logging
-- **Serilog**: Serilog is used for structured logging. Logs are written to both the console and a rolling file. This helps in monitoring and debugging the application.
-
-### API Documentation
-- **Swagger/OpenAPI**: Swagger is configured to provide interactive API documentation. It includes JWT authentication configuration for testing secured endpoints directly from the Swagger UI.
-
-### CORS
-- **Cross-Origin Resource Sharing (CORS)**: Configured to allow any origin, method, and header. This is essential for enabling client applications from different origins to interact with the API.
-
-### Database
-- **Entity Framework Core**: The project uses Entity Framework Core to interact with a SQL Server database. The connection string is configured in the `appsettings.json` file.
+### Data Persistence
+- **Entity Framework Core**: Utilizes EF Core for database interactions with SQL Server.
+- **Code-First Migrations**: Includes database schema management through EF Core migrations.
 
 ### Caching
-- **In-Memory Caching**: The project utilizes in-memory caching to improve performance by storing frequently accessed data. This is demonstrated in the `WeatherForecastController`.
+- **In-Memory Caching**: Implements caching for frequently accessed data like book lists and author information.
+
+### Logging
+- **Serilog**: Structured logging to console and rolling file for comprehensive application monitoring.
+
+### API Documentation
+- **Swagger/OpenAPI**: Interactive API documentation with JWT authentication support for testing secured endpoints.
+
+### CORS
+- **Cross-Origin Resource Sharing**: Configured to allow specified origins, methods, and headers.
 
 ### Rate Limiting
-- **AspNetCoreRateLimit**: Configured to limit the number of requests to the API, protecting it from abuse and ensuring fair usage. Rate-limiting settings are defined in the `appsettings.json` file.
+- **AspNetCoreRateLimit**: Protects the API from abuse and ensures fair usage.
 
 ### API Versioning
-- **API Versioning**: The project supports API versioning, allowing for version-specific routing and easier management of API evolution.
+- Supports versioning to manage API evolution and backward compatibility.
 
-### Publishing and Deploying 
-- **IIS**: During the development of this project, I also learned how to publish and deploy an ASP.NET Core application on Internet Information Services (IIS). This involves:
+### Message Queuing
+- **RabbitMQ Integration**: 
+  - Message publishing endpoint for asynchronous operations.
+  - Background service for consuming and processing queued messages.
 
-## Tools and Technologies Used
+### Controllers
+- **BooksController**: Manages book-related operations (GET, POST, PUT, DELETE).
+- **AuthorsController**: Handles author data management.
+- **CategoriesController**: Manages book categories.
+- **UserController**: Handles user authentication and token generation.
+- **MessageController**: Facilitates message publishing to RabbitMQ.
 
-- **ASP.NET Core**: The framework used for building the Web API.
-- **Entity Framework Core**: For database interactions.
-- **JWT (JSON Web Tokens)**: For secure authentication.
-- **Serilog**: For logging.
-- **Swagger/OpenAPI**: For API documentation and testing.
-- **CORS**: For handling cross-origin requests.
-- **AspNetCoreRateLimit**: For implementing rate limiting.
-- **API Versioning**: For managing API versions.
+## Tools and Technologies
+- ASP.NET Core
+- Entity Framework Core
+- JWT (JSON Web Tokens)
+- Serilog
+- Swagger/OpenAPI
+- CORS
+- AspNetCoreRateLimit
+- API Versioning
+- RabbitMQ
+- SQL Server
 
+## Deployment
+- **IIS Deployment**: The application is configured for deployment on Internet Information Services (IIS), enabling easy hosting and management on Windows servers.
 
+## Getting Started
+1. Clone the repository
+2. Update the connection string in `appsettings.json` to point to your SQL Server instance
+3. Run Entity Framework migrations to set up the database
+4. Configure RabbitMQ connection settings if using message queuing features
+5. Build and run the application
+
+## API Endpoints
+- `/api/v1/books`: Book management endpoints
+- `/api/v1/authors`: Author management endpoints
+- `/api/v1/categories`: Category management endpoints
+- `/api/v1/user/auth`: User authentication endpoint
+- `/api/v1/message`: Message publishing endpoint
+
+For detailed API documentation, refer to the Swagger UI available at `/swagger` when running the application.
