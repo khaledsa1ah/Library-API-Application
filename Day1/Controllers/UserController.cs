@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -14,19 +12,8 @@ namespace Day1.Controllers
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")] // Specify the API version
-    public class UserController : ControllerBase
+    public class UserController(JwtOptions _jwtOptions, ApplicationDbContext _dbContext, IMemoryCache _memoryCache) : ControllerBase
     {
-        private readonly JwtOptions _jwtOptions;
-        private readonly ApplicationDbContext _dbContext;
-        private readonly IMemoryCache _memoryCache;
-
-        public UserController(JwtOptions jwtOptions, ApplicationDbContext dbContext, IMemoryCache memoryCache)
-        {
-            _jwtOptions = jwtOptions;
-            _dbContext = dbContext;
-            _memoryCache = memoryCache;
-        }
-
         [HttpPost("auth")] // Route becomes api/v1/user/auth
         public ActionResult<string> AuthenticateUser(AuthenticationRequest request)
         {

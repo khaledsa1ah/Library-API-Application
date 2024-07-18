@@ -8,15 +8,8 @@ namespace Day1.Controllers
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")]
-    public class MessageController : ControllerBase
+    public class MessageController(RabbitMQService _rabbitMQService) : ControllerBase
     {
-        private readonly RabbitMQService _rabbitMQService;
-
-        public MessageController(RabbitMQService rabbitMQService)
-        {
-            _rabbitMQService = rabbitMQService;
-        }
-
         [HttpPost]
         public IActionResult PublishMessage([FromBody] MessageDto message)
         {

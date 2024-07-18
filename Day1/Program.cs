@@ -138,6 +138,7 @@ namespace Day1
 
             app.UseHttpsRedirection();
             app.UseIpRateLimiting();
+            app.UseAuthentication();
             app.UseAuthorization();
             app.UseCors();
 
