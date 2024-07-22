@@ -1,5 +1,3 @@
-using Day1.Repositories;
-
 namespace Day1;
 using Authorization;
 using Data;
@@ -40,6 +38,12 @@ public class Program
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<UnitOfWork>();
 
+            // Register services
+            builder.Services.AddScoped<IAuthorService, AuthorService>();
+            builder.Services.AddScoped<IBookService, BookService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+            
+            
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

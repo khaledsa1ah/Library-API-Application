@@ -1,4 +1,4 @@
-﻿namespace MyWebAPP.DTOs;
+﻿namespace Day1.DTOs;
 
 public class AuthenticationRequest
 {
