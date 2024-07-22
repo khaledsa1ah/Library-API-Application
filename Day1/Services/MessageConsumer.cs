@@ -2,7 +2,7 @@
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
-using Day1.Dtos;
+using Day1.DTOs;
 using Serilog;
 
 namespace Day1.Services

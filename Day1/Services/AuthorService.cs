@@ -1,4 +1,5 @@
 ﻿using Day1.Data;
+using Day1.DTOs;
 using Day1.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -45,11 +46,12 @@ public class AuthorService(UnitOfWork _unitOfWork, IMemoryCache _cache) : IAutho
         return author;
     }
 
-    public async Task UpdateAuthorAsync(Author author)
+    public async Task UpdateAuthorAsync(int id, AuthorDTO authorDto)
     {
-        await _unitOfWork.Authors.UpdateAsync(author);
+        var author = await _unitOfWork.Authors.GetByIdAsync(id);
+        author.Name = authorDto.Name;
         await _unitOfWork.SaveChangesAsync();
-        _cache.Remove($"author_{author.Id}"); // Invalidate cache for specific author
+        _cache.Remove($"author_{id}"); // Invalidate cache for specific author
         _cache.Remove("authors"); // Invalidate cache for all authors
     }
 
@@ -65,4 +67,3 @@ public class AuthorService(UnitOfWork _unitOfWork, IMemoryCache _cache) : IAutho
         }
     }
 }
-

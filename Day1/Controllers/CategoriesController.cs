@@ -4,6 +4,7 @@ using Day1.Data;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Authorization;
 using Day1.Authorization;
+using Day1.DTOs;
 using Serilog;
 using Day1.Repositories;
 using Day1.Services;
@@ -44,10 +45,13 @@ namespace Day1.Controllers
 
         [HttpPut("{id}")]
         [CheckPermission(Permission.Edit)]
-        public async Task<IActionResult> UpdateCategory(int id, Category category)
+        public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryDTO categoryDto)
         {
-            if (id != category.Id) return BadRequest();
-            await _categoryService.UpdateCategoryAsync(category);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            await _categoryService.UpdateCategoryAsync(id, categoryDto);
             return NoContent();
         }
 

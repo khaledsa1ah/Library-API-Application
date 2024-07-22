@@ -1,4 +1,6 @@
-﻿namespace Day1.Services;
+﻿using Day1.DTOs;
+
+namespace Day1.Services;
 
 using Data;
 using Microsoft.Extensions.Caching.Memory;
@@ -63,13 +65,17 @@ public class CategoryService(UnitOfWork _unitOfWork, IMemoryCache _cache) : ICat
         Log.Information("Category added and cache invalidated at {Time}", DateTime.UtcNow);
     }
 
-    public async Task UpdateCategoryAsync(Category category)
+    public async Task UpdateCategoryAsync(int id, CategoryDTO categoryDto)
     {
-        await _unitOfWork.Categories.UpdateAsync(category);
-        await _unitOfWork.SaveChangesAsync();
-        _cache.Remove($"category_{category.Id}"); // Invalidate cache for specific category
-        _cache.Remove("categories"); // Invalidate cache for all categories
-        Log.Information("Category with id {Id} updated and cache invalidated at {Time}", category.Id, DateTime.UtcNow);
+        var category = await _unitOfWork.Categories.GetByIdAsync(id);
+        if (category != null)
+        {
+            category.Name = categoryDto.Name;
+            await _unitOfWork.SaveChangesAsync();
+            _cache.Remove($"category_{id}"); // Invalidate cache for specific category
+            _cache.Remove("categories"); // Invalidate cache for all categories
+            Log.Information("Category with id {Id} updated and cache invalidated at {Time}", id, DateTime.UtcNow);
+        }
     }
 
     public async Task DeleteCategoryAsync(int id)

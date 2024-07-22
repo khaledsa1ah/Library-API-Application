@@ -1,4 +1,4 @@
-﻿using Day1.Dtos;
+﻿using Day1.DTOs;
 using Day1.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;

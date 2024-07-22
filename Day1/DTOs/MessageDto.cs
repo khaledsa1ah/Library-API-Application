@@ -1,4 +1,4 @@
-﻿namespace Day1.Dtos
+﻿namespace Day1.DTOs
 {
     public class MessageDto
     {

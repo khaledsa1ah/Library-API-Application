@@ -4,6 +4,7 @@ using Day1.Data;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Authorization;
 using Day1.Authorization;
+using Day1.DTOs;
 using Day1.Repositories;
 using Serilog;
 using Day1.Services;
@@ -43,10 +44,13 @@ namespace Day1.Controllers
 
         [HttpPut("{id}")]
         [CheckPermission(Permission.Edit)]
-        public async Task<IActionResult> UpdateAuthor(int id, Author author)
+        public async Task<IActionResult> UpdateAuthor(int id, [FromBody] AuthorDTO authorDto)
         {
-            if (id != author.Id) return BadRequest();
-            await _authorService.UpdateAuthorAsync(author);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            await _authorService.UpdateAuthorAsync(id, authorDto);
             return NoContent();
         }
 
