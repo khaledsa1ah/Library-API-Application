@@ -17,6 +17,8 @@ This project, developed during my internship at Link Development, is an ASP.NET 
 ### Data Persistence
 - **Entity Framework Core**: Utilizes EF Core for database interactions with SQL Server.
 - **Code-First Migrations**: Includes database schema management through EF Core migrations.
+- **Repository Pattern**: Implements the repository pattern for data access abstraction.
+- **Unit of Work**: Uses the Unit of Work pattern for managing database transactions.
 
 ### Caching
 - **In-Memory Caching**: Implements caching for frequently accessed data like book lists and author information.
@@ -48,6 +50,10 @@ This project, developed during my internship at Link Development, is an ASP.NET 
 - **UserController**: Handles user authentication and token generation.
 - **MessageController**: Facilitates message publishing to RabbitMQ.
 
+### Services
+- Implements service layer for business logic separation.
+- Services for Books, Authors, and Categories.
+
 ## Tools and Technologies
 - ASP.NET Core
 - Entity Framework Core
@@ -77,4 +83,19 @@ This project, developed during my internship at Link Development, is an ASP.NET 
 - `/api/v1/user/auth`: User authentication endpoint
 - `/api/v1/message`: Message publishing endpoint
 
-For detailed API documentation, refer to the Swagger UI available at `/swagger` when running the application.
+For detailed API documentation, refer to the Swagger UI available at `/swagger/index.html` when running the application.
+
+## Project Structure
+- **Controllers**: Handle HTTP requests and responses
+- **Services**: Implement business logic
+- **Repositories**: Manage data access
+- **Data**: Contains Entity Framework context and entity models
+- **DTOs**: Data Transfer Objects for API requests and responses
+- **Authorization**: Custom authorization attributes and filters
+
+## Best Practices
+- Dependency Injection
+- Asynchronous programming
+- Exception handling
+- Code-first database approach
+- Separation of concerns
