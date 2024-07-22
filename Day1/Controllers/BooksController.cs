@@ -5,13 +5,19 @@ using MyWebAPP.DTOs;
 using Day1.Authorization;
 using Serilog;
 using Microsoft.Extensions.Caching.Memory;
+using Day1.Repositories;
 
 namespace MyWebAPP.Controllers
 {
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")]
     [ApiController]
-    public class BooksController(ApplicationDbContext _context, IMemoryCache _cache) : ControllerBase
+    public class BooksController(
+        ApplicationDbContext _context,
+        IMemoryCache _cache,
+        BookRepository _bookRepository,
+        CategoryRepository _categoryRepository,
+        AuthorRepository _authorRepository) : ControllerBase
     {
         [HttpGet]
         [CheckPermission(Permission.Read)]
@@ -22,10 +28,7 @@ namespace MyWebAPP.Controllers
             var cacheKey = "books";
             if (!_cache.TryGetValue(cacheKey, out List<Book> books))
             {
-                books = await _context.Books
-                    .Include(b => b.Author)
-                    .Include(b => b.Category)
-                    .ToListAsync();
+                books = (await _bookRepository.GetAllAsync()).ToList();
 
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
@@ -50,12 +53,9 @@ namespace MyWebAPP.Controllers
             Log.Information("GetBookByISBN called with ISBN {ISBN} at {Time}", isbn, DateTime.UtcNow);
 
             var cacheKey = $"book_{isbn}";
-            if (!_cache.TryGetValue(cacheKey, out Book? book))
+            if (!_cache.TryGetValue(cacheKey, out Book book))
             {
-                book = await _context.Books
-                    .Include(b => b.Author)
-                    .Include(b => b.Category)
-                    .FirstOrDefaultAsync(b => b.ISBN == isbn);
+                book = await _bookRepository.GetBookByISBNAsync(isbn);
 
                 if (book == null)
                 {
@@ -86,13 +86,13 @@ namespace MyWebAPP.Controllers
         {
             Log.Information("AddBook called at {Time}", DateTime.UtcNow);
 
-            var author = await _context.Authors.FindAsync(bookDTO.AuthorId);
+            var author = await _authorRepository.GetByIdAsync(bookDTO.AuthorId);
             if (author == null)
             {
                 return BadRequest("Invalid author ID.");
             }
 
-            var category = await _context.Categories.FindAsync(bookDTO.CategoryId);
+            var category = await _categoryRepository.GetByIdAsync(bookDTO.CategoryId);
             if (category == null)
             {
                 return BadRequest("Invalid category ID.");
@@ -108,8 +108,7 @@ namespace MyWebAPP.Controllers
                 Author = author
             };
 
-            _context.Books.Add(book);
-            await _context.SaveChangesAsync();
+            await _bookRepository.AddAsync(book);
 
             var cacheKey = "books";
             _cache.Remove(cacheKey); // Invalidate cache
@@ -123,7 +122,7 @@ namespace MyWebAPP.Controllers
         [CheckPermission(Permission.Edit)]
         public async Task<IActionResult> UpdateBook(string isbn, BookDTO bookDTO)
         {
-            var book = await _context.Books.FirstOrDefaultAsync(b => b.ISBN == isbn);
+            var book = await _bookRepository.GetBookByISBNAsync(isbn);
 
             if (book == null)
             {
@@ -132,13 +131,13 @@ namespace MyWebAPP.Controllers
 
             Log.Information("UpdateBook called for ISBN {ISBN} at {Time}", isbn, DateTime.UtcNow);
 
-            var author = await _context.Authors.FindAsync(bookDTO.AuthorId);
+            var author = await _authorRepository.GetByIdAsync(bookDTO.AuthorId);
             if (author == null)
             {
                 return BadRequest("Invalid author ID.");
             }
 
-            var category = await _context.Categories.FindAsync(bookDTO.CategoryId);
+            var category = await _categoryRepository.GetByIdAsync(bookDTO.CategoryId);
             if (category == null)
             {
                 return BadRequest("Invalid category ID.");
@@ -151,13 +150,14 @@ namespace MyWebAPP.Controllers
             book.Category = category;
             book.Author = author;
 
-            await _context.SaveChangesAsync();
+            await _bookRepository.UpdateAsync(book);
 
             var cacheKey = $"book_{isbn}";
             _cache.Remove(cacheKey); // Invalidate cache for specific book
             _cache.Remove("books"); // Invalidate cache for all books
 
-            Log.Information("Book with ISBN {ISBN} updated and cache invalidated at {Time}", isbn, DateTime.UtcNow);
+            Log.Information("Book with ISBN {ISBN} updated and cache invalidated at {Time}", isbn,
+                DateTime.UtcNow);
 
             return NoContent();
         }
@@ -168,20 +168,20 @@ namespace MyWebAPP.Controllers
         {
             Log.Information("DeleteBook called for ISBN {ISBN} at {Time}", isbn, DateTime.UtcNow);
 
-            var book = await _context.Books.FirstOrDefaultAsync(b => b.ISBN == isbn);
+            var book = await _bookRepository.GetBookByISBNAsync(isbn);
             if (book == null)
             {
                 return NotFound();
             }
 
-            _context.Books.Remove(book);
-            await _context.SaveChangesAsync();
+            await _bookRepository.DeleteAsync(book);
 
             var cacheKey = $"book_{isbn}";
             _cache.Remove(cacheKey); // Invalidate cache for specific book
             _cache.Remove("books"); // Invalidate cache for all books
 
-            Log.Information("Book with ISBN {ISBN} deleted and cache invalidated at {Time}", isbn, DateTime.UtcNow);
+            Log.Information("Book with ISBN {ISBN} deleted and cache invalidated at {Time}", isbn,
+                DateTime.UtcNow);
 
             return NoContent();
         }

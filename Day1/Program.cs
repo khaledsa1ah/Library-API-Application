@@ -1,5 +1,8 @@
-using Day1.Authorization;
-using Day1.Data;
+using Day1.Repositories;
+
+namespace Day1;
+using Authorization;
+using Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -8,11 +11,10 @@ using Serilog;
 using AspNetCoreRateLimit;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Mvc;
-using Day1.Services;
+using Services;
+using Repositories;
 
-namespace Day1
-{
-    public class Program
+public class Program
     {
         public static void Main(string[] args)
         {
@@ -25,6 +27,14 @@ namespace Day1
             );
             builder.Services.AddSingleton<RabbitMQService>();
             builder.Services.AddHostedService<MessageConsumer>();
+
+            // Register repositories
+            builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
+            builder.Services.AddScoped<IBookRepository, BookRepository>();
+            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            builder.Services.AddScoped<AuthorRepository>();
+            builder.Services.AddScoped<BookRepository>();
+            builder.Services.AddScoped<CategoryRepository>();
 
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -146,5 +156,5 @@ namespace Day1
 
             app.Run();
         }
-    }
+    
 }

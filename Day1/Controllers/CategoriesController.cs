@@ -5,6 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Authorization;
 using Day1.Authorization;
 using Serilog;
+using Day1.Repositories;
 
 namespace MyWebAPP.Controllers
 {
@@ -12,7 +13,10 @@ namespace MyWebAPP.Controllers
     [ApiVersion("1.0")]
     [ApiController]
     [Authorize]
-    public class CategoriesController(ApplicationDbContext _context, IMemoryCache _cache) : ControllerBase
+    public class CategoriesController(
+        ApplicationDbContext _context,
+        IMemoryCache _cache,
+        CategoryRepository _categoryRepository) : ControllerBase
     {
         [HttpGet]
         [CheckPermission(Permission.Read)]
@@ -23,7 +27,7 @@ namespace MyWebAPP.Controllers
             var cacheKey = "categories";
             if (!_cache.TryGetValue(cacheKey, out List<Category> categories))
             {
-                categories = await _context.Categories.ToListAsync();
+                categories = (await _categoryRepository.GetAllAsync()).ToList();
 
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
@@ -47,8 +51,7 @@ namespace MyWebAPP.Controllers
         {
             Log.Information("AddCategory called at {Time}", DateTime.UtcNow);
 
-            _context.Categories.Add(category);
-            await _context.SaveChangesAsync();
+            await _categoryRepository.AddAsync(category);
 
             var cacheKey = "categories";
             _cache.Remove(cacheKey); // Invalidate cache
@@ -64,20 +67,20 @@ namespace MyWebAPP.Controllers
         {
             Log.Information("DeleteCategory called for id {Id} at {Time}", id, DateTime.UtcNow);
 
-            var category = await _context.Categories.FindAsync(id);
+            var category = await _categoryRepository.GetByIdAsync(id);
             if (category == null)
             {
                 return NotFound();
             }
 
-            _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
+            await _categoryRepository.DeleteAsync(category);
 
             var cacheKey = $"category_{id}";
             _cache.Remove(cacheKey); // Invalidate cache for specific category
             _cache.Remove("categories"); // Invalidate cache for all categories
 
-            Log.Information("Category with id {Id} deleted and cache invalidated at {Time}", id, DateTime.UtcNow);
+            Log.Information("Category with id {Id} deleted and cache invalidated at {Time}", id,
+                DateTime.UtcNow);
 
             return NoContent();
         }

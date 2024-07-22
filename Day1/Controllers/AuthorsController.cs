@@ -4,6 +4,7 @@ using Day1.Data;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Authorization;
 using Day1.Authorization;
+using Day1.Repositories;
 using Serilog;
 
 namespace MyWebAPP.Controllers
@@ -12,18 +13,18 @@ namespace MyWebAPP.Controllers
     [ApiVersion("1.0")]
     [ApiController]
     [Authorize]
-    public class AuthorsController(ApplicationDbContext _context, IMemoryCache _cache) : ControllerBase
+    public class AuthorsController(ApplicationDbContext _context, IMemoryCache _cache, AuthorRepository _authorRepository) : ControllerBase
     {
         [HttpGet]
         [CheckPermission(Permission.Read)]
         public async Task<ActionResult<IEnumerable<Author>>> GetAuthors()
         {
             Log.Information("GetAuthors called at {Time}", DateTime.UtcNow);
-
+            
             var cacheKey = "authors";
             if (!_cache.TryGetValue(cacheKey, out List<Author> authors))
             {
-                authors = await _context.Authors.ToListAsync();
+                authors = (await _authorRepository.GetAllAsync()).ToList();
 
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
@@ -41,6 +42,7 @@ namespace MyWebAPP.Controllers
             return authors;
         }
 
+        [CheckPermission(Permission.Read)]
         [HttpGet("{id}")]
         public async Task<ActionResult<Author>> GetAuthorById(int id)
         {
@@ -49,7 +51,7 @@ namespace MyWebAPP.Controllers
             var cacheKey = $"author_{id}";
             if (!_cache.TryGetValue(cacheKey, out Author author))
             {
-                author = await _context.Authors.FindAsync(id);
+                author = await _authorRepository.GetByIdAsync(id);
 
                 if (author == null)
                 {
@@ -74,13 +76,13 @@ namespace MyWebAPP.Controllers
             return author;
         }
 
+        [CheckPermission(Permission.Add)]
         [HttpPost]
         public async Task<ActionResult<Author>> AddAuthor(Author author)
         {
             Log.Information("AddAuthor called at {Time}", DateTime.UtcNow);
 
-            _context.Authors.Add(author);
-            await _context.SaveChangesAsync();
+            await _authorRepository.AddAsync(author);
 
             var cacheKey = "authors";
             _cache.Remove(cacheKey); // Invalidate cache
@@ -90,6 +92,7 @@ namespace MyWebAPP.Controllers
             return CreatedAtAction(nameof(GetAuthorById), new { id = author.Id }, author);
         }
 
+        [CheckPermission(Permission.Edit)]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAuthor(int id, Author author)
         {
@@ -100,21 +103,20 @@ namespace MyWebAPP.Controllers
 
             Log.Information("UpdateAuthor called for id {Id} at {Time}", id, DateTime.UtcNow);
 
-            _context.Entry(author).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                await _authorRepository.UpdateAsync(author);
 
                 var cacheKey = $"author_{id}";
                 _cache.Remove(cacheKey); // Invalidate cache for specific author
                 _cache.Remove("authors"); // Invalidate cache for all authors
 
-                Log.Information("Author with id {Id} updated and cache invalidated at {Time}", id, DateTime.UtcNow);
+                Log.Information("Author with id {Id} updated and cache invalidated at {Time}", id,
+                    DateTime.UtcNow);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception)
             {
-                if (!AuthorExists(id))
+                if (!await AuthorExists(id))
                 {
                     return NotFound();
                 }
@@ -127,19 +129,19 @@ namespace MyWebAPP.Controllers
             return NoContent();
         }
 
+        [CheckPermission(Permission.Delete)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
             Log.Information("DeleteAuthor called for id {Id} at {Time}", id, DateTime.UtcNow);
 
-            var author = await _context.Authors.FindAsync(id);
+            var author = await _authorRepository.GetByIdAsync(id);
             if (author == null)
             {
                 return NotFound();
             }
 
-            _context.Authors.Remove(author);
-            await _context.SaveChangesAsync();
+            await _authorRepository.DeleteAsync(author);
 
             var cacheKey = $"author_{id}";
             _cache.Remove(cacheKey); // Invalidate cache for specific author
@@ -150,9 +152,10 @@ namespace MyWebAPP.Controllers
             return NoContent();
         }
 
-        private bool AuthorExists(int id)
+        private async Task<bool> AuthorExists(int id)
         {
-            return _context.Authors.Any(e => e.Id == id);
+            var author = await _authorRepository.GetByIdAsync(id);
+            return author != null;
         }
     }
 }
