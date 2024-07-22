@@ -13,7 +13,7 @@ namespace MyWebAPP.Controllers
     [ApiVersion("1.0")]
     [ApiController]
     [Authorize]
-    public class AuthorsController(ApplicationDbContext _context, IMemoryCache _cache, AuthorRepository _authorRepository) : ControllerBase
+    public class AuthorsController( IMemoryCache _cache, UnitOfWork _unitOfWork) : ControllerBase
     {
         [HttpGet]
         [CheckPermission(Permission.Read)]
@@ -24,7 +24,7 @@ namespace MyWebAPP.Controllers
             var cacheKey = "authors";
             if (!_cache.TryGetValue(cacheKey, out List<Author> authors))
             {
-                authors = (await _authorRepository.GetAllAsync()).ToList();
+                authors = (await _unitOfWork.Authors.GetAllAsync()).ToList();
 
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
@@ -51,7 +51,7 @@ namespace MyWebAPP.Controllers
             var cacheKey = $"author_{id}";
             if (!_cache.TryGetValue(cacheKey, out Author author))
             {
-                author = await _authorRepository.GetByIdAsync(id);
+                author = await _unitOfWork.Authors.GetByIdAsync(id);
 
                 if (author == null)
                 {
@@ -82,7 +82,8 @@ namespace MyWebAPP.Controllers
         {
             Log.Information("AddAuthor called at {Time}", DateTime.UtcNow);
 
-            await _authorRepository.AddAsync(author);
+            await _unitOfWork.Authors.AddAsync(author);
+            await _unitOfWork.SaveChangesAsync();
 
             var cacheKey = "authors";
             _cache.Remove(cacheKey); // Invalidate cache
@@ -105,7 +106,8 @@ namespace MyWebAPP.Controllers
 
             try
             {
-                await _authorRepository.UpdateAsync(author);
+                await _unitOfWork.Authors.UpdateAsync(author);
+                await _unitOfWork.SaveChangesAsync();
 
                 var cacheKey = $"author_{id}";
                 _cache.Remove(cacheKey); // Invalidate cache for specific author
@@ -135,13 +137,14 @@ namespace MyWebAPP.Controllers
         {
             Log.Information("DeleteAuthor called for id {Id} at {Time}", id, DateTime.UtcNow);
 
-            var author = await _authorRepository.GetByIdAsync(id);
+            var author = await _unitOfWork.Authors.GetByIdAsync(id);
             if (author == null)
             {
                 return NotFound();
             }
 
-            await _authorRepository.DeleteAsync(author);
+            await _unitOfWork.Authors.DeleteAsync(author);
+            await _unitOfWork.SaveChangesAsync();
 
             var cacheKey = $"author_{id}";
             _cache.Remove(cacheKey); // Invalidate cache for specific author
@@ -154,7 +157,7 @@ namespace MyWebAPP.Controllers
 
         private async Task<bool> AuthorExists(int id)
         {
-            var author = await _authorRepository.GetByIdAsync(id);
+            var author = await _unitOfWork.Authors.GetByIdAsync(id);
             return author != null;
         }
     }

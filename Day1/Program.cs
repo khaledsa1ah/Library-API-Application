@@ -35,6 +35,10 @@ public class Program
             builder.Services.AddScoped<AuthorRepository>();
             builder.Services.AddScoped<BookRepository>();
             builder.Services.AddScoped<CategoryRepository>();
+            
+            // Register UnitOfWork
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<UnitOfWork>();
 
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
