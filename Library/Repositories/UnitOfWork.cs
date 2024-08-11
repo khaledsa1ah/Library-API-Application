@@ -3,22 +3,22 @@
 using Data;
 
 public class UnitOfWork(
-    ApplicationDbContext _context,
-    IAuthorRepository _authors,
-    IBookRepository _books,
-    ICategoryRepository _categories) : IUnitOfWork
+    ApplicationDbContext context,
+    IAuthorRepository authors,
+    IBookRepository books,
+    ICategoryRepository categories) : IUnitOfWork
 {
-    public IAuthorRepository Authors => _authors ??= new AuthorRepository(_context);
-    public IBookRepository Books => _books ??= new BookRepository(_context);
-    public ICategoryRepository Categories => _categories ??= new CategoryRepository(_context);
+    public IAuthorRepository Authors => authors ??= new AuthorRepository(context);
+    public IBookRepository Books => books ??= new BookRepository(context);
+    public ICategoryRepository Categories => categories ??= new CategoryRepository(context);
 
     public async Task<int> SaveChangesAsync()
     {
-        return await _context.SaveChangesAsync();
+        return await context.SaveChangesAsync();
     }
 
     public void Dispose()
     {
-        _context.Dispose();
+        context.Dispose();
     }
 }

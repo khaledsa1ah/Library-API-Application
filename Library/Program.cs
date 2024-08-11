@@ -1,3 +1,5 @@
+using Library.DTOs;
+using Library.Middleware;
 namespace Library;
 using Authorization;
 using Data;
@@ -23,7 +25,7 @@ public class Program
                 options.Filters.Add<PermissionBasedAuthorizationFilter>();
             }
             );
-            builder.Services.AddSingleton<RabbitMQService>();
+            builder.Services.AddSingleton<RabbitMqService>();
             builder.Services.AddHostedService<MessageConsumer>();
 
             // Register repositories
@@ -43,6 +45,8 @@ public class Program
             builder.Services.AddScoped<IBookService, BookService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             
+            // Register AutoMapper
+            builder.Services.AddAutoMapper(typeof(MappingProfile));
             
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -119,9 +123,9 @@ public class Program
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.signingKey)),
-                    ValidIssuer = jwtOptions.issuer,
-                    ValidAudience = jwtOptions.audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
                 };
             });
 
@@ -153,7 +157,7 @@ public class Program
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Library API v1");
             });
-
+            app.UseGlobalExceptionHandling();
             app.UseHttpsRedirection();
             app.UseIpRateLimiting();
             app.UseAuthentication();

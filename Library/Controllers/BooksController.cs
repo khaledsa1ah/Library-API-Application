@@ -14,38 +14,60 @@ namespace Library.Controllers
     [ApiVersion("1.0")]
     [ApiController]
     public class BooksController(
-        IBookService _bookService) : ControllerBase
+        IBookService bookService) : ControllerBase
     {
-        [HttpGet]
+[HttpGet]
         [CheckPermission(Permission.Read)]
-        public async Task<ActionResult<IEnumerable<Book>>> GetBooks()
+        public async Task<ActionResult<IEnumerable<GetBooksDto>>> GetBooks()
         {
-            var books = await _bookService.GetBooksAsync();
+            Log.Information("Getting list of books.");
+            var books = await bookService.GetBooksAsync();
+            Log.Information("Retrieved {Count} books.", books.Count());
             return Ok(books);
         }
 
         [HttpGet("{isbn}")]
         [CheckPermission(Permission.Read)]
-        public async Task<ActionResult<Book>> GetBookByISBN(string isbn)
+        public async Task<ActionResult<Book>> GetBookByIsbn(string isbn)
         {
-            var book = await _bookService.GetBookByISBNAsync(isbn);
-            if (book == null) return NotFound();
+            Log.Information("Getting book with ISBN {ISBN}.", isbn);
+            var book = await bookService.GetBookByIsbnAsync(isbn);
+            if (book == null)
+            {
+                Log.Warning("Book with ISBN {ISBN} not found.", isbn);
+                return NotFound();
+            }
+            Log.Information("Retrieved book with ISBN {ISBN}.", isbn);
             return Ok(book);
         }
 
         [HttpPost]
         [CheckPermission(Permission.Add)]
-        public async Task<ActionResult<Book>> AddBook(BookDTO bookDTO)
+        public async Task<ActionResult<Book>> AddBook(BookDto bookDto)
         {
-            await _bookService.AddBookAsync(bookDTO);
-            return CreatedAtAction(nameof(GetBookByISBN), new { isbn = bookDTO.ISBN }, bookDTO);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            Log.Information("Adding new book with ISBN {ISBN}.", bookDto.Isbn);
+            await bookService.AddBookAsync(bookDto);
+            Log.Information("Book with ISBN {ISBN} added.", bookDto.Isbn);
+            return CreatedAtAction(nameof(GetBookByIsbn), new { isbn = bookDto.Isbn }, bookDto);
         }
 
         [HttpPut("{isbn}")]
         [CheckPermission(Permission.Edit)]
-        public async Task<IActionResult> UpdateBook(string isbn, BookDTO bookDTO)
+        public async Task<IActionResult> UpdateBook(string isbn, BookDto bookDto)
         {
-            await _bookService.UpdateBookAsync(isbn, bookDTO);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            Log.Information("Updating book with ISBN {ISBN}.", isbn);
+            await bookService.UpdateBookAsync(isbn, bookDto);
+            Log.Information("Book with ISBN {ISBN} updated.", isbn);
             return NoContent();
         }
 
@@ -53,7 +75,9 @@ namespace Library.Controllers
         [CheckPermission(Permission.Delete)]
         public async Task<IActionResult> DeleteBook(string isbn)
         {
-            await _bookService.DeleteBookAsync(isbn);
+            Log.Information("Deleting book with ISBN {ISBN}.", isbn);
+            await bookService.DeleteBookAsync(isbn);
+            Log.Information("Book with ISBN {ISBN} deleted.", isbn);
             return NoContent();
         }
     }

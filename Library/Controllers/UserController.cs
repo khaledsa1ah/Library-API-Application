@@ -12,12 +12,12 @@ namespace Library.Controllers
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")] // Specify the API version
-    public class UserController(JwtOptions _jwtOptions, ApplicationDbContext _dbContext, IMemoryCache _memoryCache) : ControllerBase
+    public class UserController(JwtOptions jwtOptions, ApplicationDbContext dbContext, IMemoryCache memoryCache) : ControllerBase
     {
         [HttpPost("auth")] // Route becomes api/v1/user/auth
         public ActionResult<string> AuthenticateUser(AuthenticationRequest request)
         {
-            var user = _dbContext.Set<User>().FirstOrDefault(x => x.Name == request.Username && x.Password == request.Password);
+            var user = dbContext.Set<User>().FirstOrDefault(x => x.Name == request.Username && x.Password == request.Password);
             if (user == null)
             {
                 Log.Warning("Authentication failed for user {Username}", request.Username);
@@ -27,12 +27,12 @@ namespace Library.Controllers
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Issuer = _jwtOptions.issuer,
-                Audience = _jwtOptions.audience,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.signingKey)), SecurityAlgorithms.HmacSha256Signature),
+                Issuer = jwtOptions.Issuer,
+                Audience = jwtOptions.Audience,
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)), SecurityAlgorithms.HmacSha256Signature),
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Name, user.Name)
                 }),
             };
@@ -40,9 +40,9 @@ namespace Library.Controllers
             var accessToken = tokenHandler.WriteToken(securityToken);
 
             // Cache 
-            _memoryCache.Set(accessToken, user.ID, new MemoryCacheEntryOptions
+            memoryCache.Set(accessToken, user.Id, new MemoryCacheEntryOptions
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_jwtOptions.lifetime)
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(jwtOptions.Lifetime)
             });
 
             Log.Information("User {Username} authenticated successfully", user.Name);

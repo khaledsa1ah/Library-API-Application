@@ -5,38 +5,38 @@ namespace Library.Repositories;
 
 public class Repository<T> : IRepository<T> where T : class
 {
-    protected readonly ApplicationDbContext _context;
+    protected readonly ApplicationDbContext Context;
 
     public Repository(ApplicationDbContext context)
     {
-        _context = context;
+        Context = context;
     }
 
     public async Task<IEnumerable<T>> GetAllAsync()
     {
-        return await _context.Set<T>().ToListAsync();
+        return await Context.Set<T>().ToListAsync();
     }
 
     public async Task<T> GetByIdAsync(int id)
     {
-        return await _context.Set<T>().FindAsync(id);
+        return await Context.Set<T>().FindAsync(id);
     }
 
     public async Task AddAsync(T entity)
     {
-        await _context.Set<T>().AddAsync(entity);
-        await _context.SaveChangesAsync();
+        await Context.Set<T>().AddAsync(entity);
+        await Context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(T entity)
     {
-        _context.Set<T>().Update(entity);
-        await _context.SaveChangesAsync();
+        Context.Set<T>().Update(entity);
+        await Context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(T entity)
     {
-        _context.Set<T>().Remove(entity);
-        await _context.SaveChangesAsync();
+        Context.Set<T>().Remove(entity);
+        await Context.SaveChangesAsync();
     }
 }

@@ -6,9 +6,9 @@ using Data;
 
 public interface IBookService
 {
-    Task<IEnumerable<Book>> GetBooksAsync();
-    Task<Book> GetBookByISBNAsync(string isbn);
-    Task AddBookAsync(BookDTO bookDTO);
-    Task UpdateBookAsync(string isbn, BookDTO bookDTO);
+    Task<IEnumerable<GetBooksDto>> GetBooksAsync();
+    Task<Book> GetBookByIsbnAsync(string isbn);
+    Task AddBookAsync(BookDto bookDto);
+    Task UpdateBookAsync(string isbn, BookDto bookDto);
     Task DeleteBookAsync(string isbn);
 }

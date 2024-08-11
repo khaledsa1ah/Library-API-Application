@@ -27,7 +27,7 @@ namespace Library.Data
                 .WithMany()
                 .HasForeignKey(b => b.CategoryId);
             modelBuilder.Entity<User>().ToTable("Users");
-            modelBuilder.Entity<UserPermission>().ToTable("UserPermissions").HasKey(x=> new {x.UserID,x.PermissionID});
+            modelBuilder.Entity<UserPermission>().ToTable("UserPermissions").HasKey(x=> new { UserID = x.UserId, PermissionID = x.PermissionId});
         }
     }
 

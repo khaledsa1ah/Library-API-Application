@@ -16,13 +16,15 @@ namespace Library.Controllers
     [ApiController]
     [Authorize]
     public class CategoriesController(
-        ICategoryService _categoryService) : ControllerBase
+        ICategoryService categoryService) : ControllerBase
     {
         [HttpGet]
         [CheckPermission(Permission.Read)]
         public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
         {
-            var categories = await _categoryService.GetCategoriesAsync();
+            Log.Information("Getting list of categories.");
+            var categories = await categoryService.GetCategoriesAsync();
+            Log.Information("Retrieved {Count} categories.", categories.Count());
             return Ok(categories);
         }
 
@@ -30,8 +32,10 @@ namespace Library.Controllers
         [CheckPermission(Permission.Read)]
         public async Task<ActionResult<Category>> GetCategoryById(int id)
         {
-            var category = await _categoryService.GetCategoryByIdAsync(id);
+            Log.Information("Getting category with ID {Id}.", id);
+            var category = await categoryService.GetCategoryByIdAsync(id);
             if (category == null) return NotFound();
+            Log.Information("Retrieved category with ID {Id}.", id);
             return Ok(category);
         }
 
@@ -39,19 +43,23 @@ namespace Library.Controllers
         [CheckPermission(Permission.Add)]
         public async Task<ActionResult<Category>> AddCategory(Category category)
         {
-            await _categoryService.AddCategoryAsync(category);
+            Log.Information("Adding new category with Name {Name}.", category.Name);
+            await categoryService.AddCategoryAsync(category);
+            Log.Information("Category with ID {Id} added.", category.Id);
             return CreatedAtAction(nameof(GetCategoryById), new { id = category.Id }, category);
         }
 
         [HttpPut("{id}")]
         [CheckPermission(Permission.Edit)]
-        public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryDTO categoryDto)
+        public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryDto categoryDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            await _categoryService.UpdateCategoryAsync(id, categoryDto);
+
+            Log.Information("Updating category with ID {Id}.", id);
+            await categoryService.UpdateCategoryAsync(id, categoryDto);
             return NoContent();
         }
 
@@ -59,7 +67,9 @@ namespace Library.Controllers
         [CheckPermission(Permission.Delete)]
         public async Task<IActionResult> DeleteCategory(int id)
         {
-            await _categoryService.DeleteCategoryAsync(id);
+            Log.Information("Deleting category with ID {Id}.", id);
+            await categoryService.DeleteCategoryAsync(id);
+            Log.Information("Category with ID {Id} deleted.", id);
             return NoContent();
         }
     }

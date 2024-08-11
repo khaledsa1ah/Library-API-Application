@@ -5,49 +5,71 @@ using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 using Data;
 using DTOs;
+using AutoMapper;
 
-public class BookService(UnitOfWork _unitOfWork, IMemoryCache _cache) : IBookService
+public class BookService(IMapper mapper, UnitOfWork unitOfWork, IMemoryCache cache) : IBookService
 {
-    public async Task<IEnumerable<Book>> GetBooksAsync()
+    public async Task<IEnumerable<GetBooksDto>> GetBooksAsync()
     {
         var cacheKey = "books";
-        if (!_cache.TryGetValue(cacheKey, out List<Book> books))
+        List<Book> books;
+
+        if (!cache.TryGetValue(cacheKey, out books))
         {
-            books = (await _unitOfWork.Books.GetAllAsync()).ToList();
-            var cacheOptions = new MemoryCacheEntryOptions
+            try
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
-            };
-            _cache.Set(cacheKey, books, cacheOptions);
-            Log.Information("Books retrieved from database and cached at {Time}", DateTime.UtcNow);
+                books = (await unitOfWork.Books.GetBooksAsync()).ToList();
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+                };
+                cache.Set(cacheKey, books, cacheOptions);
+                Log.Information("Books retrieved from database and cached at {Time}", DateTime.UtcNow);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to retrieve books from the database at {Time}", DateTime.UtcNow);
+                throw; // Re-throw to let global exception handler manage it
+            }
         }
         else
         {
             Log.Information("Books retrieved from cache at {Time}", DateTime.UtcNow);
         }
 
-        return books;
+        return mapper.Map<List<Book>, List<GetBooksDto>>(books);
     }
 
-    public async Task<Book> GetBookByISBNAsync(string isbn)
+    public async Task<Book> GetBookByIsbnAsync(string isbn)
     {
         var cacheKey = $"book_{isbn}";
-        if (!_cache.TryGetValue(cacheKey, out Book book))
-        {
-            book = await _unitOfWork.Books.GetBookByISBNAsync(isbn);
-            if (book == null)
-            {
-                Log.Warning("Book with ISBN {ISBN} not found at {Time}", isbn, DateTime.UtcNow);
-                return null;
-            }
+        Book book;
 
-            var cacheOptions = new MemoryCacheEntryOptions
+        if (!cache.TryGetValue(cacheKey, out book))
+        {
+            try
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
-            };
-            _cache.Set(cacheKey, book, cacheOptions);
-            Log.Information("Book with ISBN {ISBN} retrieved from database and cached at {Time}", isbn,
-                DateTime.UtcNow);
+                book = await unitOfWork.Books.GetBookByIsbnAsync(isbn);
+                if (book == null)
+                {
+                    Log.Warning("Book with ISBN {ISBN} not found at {Time}", isbn, DateTime.UtcNow);
+                    return null;
+                }
+
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+                };
+                cache.Set(cacheKey, book, cacheOptions);
+                Log.Information("Book with ISBN {ISBN} retrieved from database and cached at {Time}", isbn,
+                    DateTime.UtcNow);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to retrieve book with ISBN {ISBN} from the database at {Time}", isbn,
+                    DateTime.UtcNow);
+                throw; // Re-throw to let global exception handler manage it
+            }
         }
         else
         {
@@ -57,63 +79,99 @@ public class BookService(UnitOfWork _unitOfWork, IMemoryCache _cache) : IBookSer
         return book;
     }
 
-    public async Task AddBookAsync(BookDTO bookDTO)
+    public async Task AddBookAsync(BookDto bookDto)
     {
-        var author = await _unitOfWork.Authors.GetByIdAsync(bookDTO.AuthorId);
-        if (author == null)
+        try
         {
-            throw new ArgumentException("Invalid author ID.");
-        }
+            var author = await unitOfWork.Authors.GetByIdAsync(bookDto.AuthorId);
+            if (author == null)
+            {
+                Log.Error("Invalid author ID {AuthorId} provided for book with ISBN {ISBN} at {Time}", bookDto.AuthorId,
+                    bookDto.Isbn, DateTime.UtcNow);
+                throw new ArgumentException("Invalid author ID.");
+            }
 
-        var category = await _unitOfWork.Categories.GetByIdAsync(bookDTO.CategoryId);
-        if (category == null)
-        {
-            throw new ArgumentException("Invalid category ID.");
-        }
+            var category = await unitOfWork.Categories.GetByIdAsync(bookDto.CategoryId);
+            if (category == null)
+            {
+                Log.Error("Invalid category ID {CategoryId} provided for book with ISBN {ISBN} at {Time}",
+                    bookDto.CategoryId, bookDto.Isbn, DateTime.UtcNow);
+                throw new ArgumentException("Invalid category ID.");
+            }
 
-        var book = new Book
+            var book = new Book
+            {
+                Title = bookDto.Title,
+                Isbn = bookDto.Isbn,
+                AuthorId = bookDto.AuthorId,
+                CategoryId = bookDto.CategoryId,
+                Category = category,
+                Author = author
+            };
+
+            await unitOfWork.Books.AddAsync(book);
+            await unitOfWork.SaveChangesAsync();
+            cache.Remove("books"); // Invalidate cache
+
+            Log.Information("Book with ISBN {ISBN} added and cache invalidated at {Time}", bookDto.Isbn,
+                DateTime.UtcNow);
+        }
+        catch (Exception ex)
         {
-            Title = bookDTO.Title,
-            ISBN = bookDTO.ISBN,
-            AuthorId = bookDTO.AuthorId,
-            CategoryId = bookDTO.CategoryId,
-            Category = category,
-            Author = author
-        };
-        await _unitOfWork.Books.AddAsync(book);
-        await _unitOfWork.SaveChangesAsync();
-        _cache.Remove("books"); // Invalidate cache
-        Log.Information("Book added and cache invalidated at {Time}", DateTime.UtcNow);
+            Log.Error(ex, "Failed to add book with ISBN {ISBN} at {Time}", bookDto.Isbn, DateTime.UtcNow);
+            throw; // Re-throw to let global exception handler manage it
+        }
     }
 
-    public async Task UpdateBookAsync(string isbn, BookDTO bookDTO)
+    public async Task UpdateBookAsync(string isbn, BookDto bookDto)
     {
-        var book = await _unitOfWork.Books.GetBookByISBNAsync(isbn);
-        if (book == null)
+        try
         {
-            throw new KeyNotFoundException("Book not found.");
-        }
+            var book = await unitOfWork.Books.GetBookByIsbnAsync(isbn);
+            if (book == null)
+            {
+                Log.Warning("Book with ISBN {ISBN} not found for update at {Time}", isbn, DateTime.UtcNow);
+                throw new KeyNotFoundException("Book not found.");
+            }
 
-        book.Title = bookDTO.Title;
-        book.AuthorId = bookDTO.AuthorId;
-        book.CategoryId = bookDTO.CategoryId;
-        await _unitOfWork.Books.UpdateAsync(book);
-        await _unitOfWork.SaveChangesAsync();
-        _cache.Remove($"book_{isbn}"); // Invalidate cache for specific book
-        _cache.Remove("books"); // Invalidate cache for all books
-        Log.Information("Book with ISBN {ISBN} updated and cache invalidated at {Time}", isbn, DateTime.UtcNow);
+            book = mapper.Map(bookDto, book);
+            await unitOfWork.Books.UpdateAsync(book);
+            await unitOfWork.SaveChangesAsync();
+            cache.Remove($"book_{isbn}"); // Invalidate cache for specific book
+            cache.Remove("books"); // Invalidate cache for all books
+
+            Log.Information("Book with ISBN {ISBN} updated and cache invalidated at {Time}", isbn, DateTime.UtcNow);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to update book with ISBN {ISBN} at {Time}", isbn, DateTime.UtcNow);
+            throw; // Re-throw to let global exception handler manage it
+        }
     }
 
     public async Task DeleteBookAsync(string isbn)
     {
-        var book = await _unitOfWork.Books.GetBookByISBNAsync(isbn);
-        if (book != null)
+        try
         {
-            await _unitOfWork.Books.DeleteAsync(book);
-            await _unitOfWork.SaveChangesAsync();
-            _cache.Remove($"book_{isbn}"); // Invalidate cache for specific book
-            _cache.Remove("books"); // Invalidate cache for all books
-            Log.Information("Book with ISBN {ISBN} deleted and cache invalidated at {Time}", isbn, DateTime.UtcNow);
+            var book = await unitOfWork.Books.GetBookByIsbnAsync(isbn);
+            if (book != null)
+            {
+                await unitOfWork.Books.DeleteAsync(book);
+                await unitOfWork.SaveChangesAsync();
+                cache.Remove($"book_{isbn}"); // Invalidate cache for specific book
+                cache.Remove("books"); // Invalidate cache for all books
+
+                Log.Information("Book with ISBN {ISBN} deleted and cache invalidated at {Time}", isbn, DateTime.UtcNow);
+            }
+            else
+            {
+                Log.Warning("Attempted to delete non-existent book with ISBN {ISBN} at {Time}", isbn, DateTime.UtcNow);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to delete book with ISBN {ISBN} at {Time}", isbn, DateTime.UtcNow);
+            throw; // Re-throw to let global exception handler manage it
         }
     }
 }

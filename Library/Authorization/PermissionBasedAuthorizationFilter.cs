@@ -23,7 +23,7 @@ namespace Library.Authorization
                 {
                     var userid = int.Parse(claimIdentity.FindFirst(ClaimTypes.NameIdentifier).Value);
                     var hasPermission = dbContext.Set<UserPermission>()
-                        .Any(x => x.UserID == userid && x.PermissionID == attribute.Permission);
+                        .Any(x => x.UserId == userid && x.PermissionId == attribute.Permission);
                     if (!hasPermission)
                     {
                         context.Result = new ForbidResult();

@@ -4,13 +4,13 @@ using System.Text.Json;
 
 namespace Library.Services
 {
-    public class RabbitMQService
+    public class RabbitMqService
     {
         private readonly ConnectionFactory _factory;
         private readonly IConnection _connection;
         private readonly IModel _channel;
 
-        public RabbitMQService()
+        public RabbitMqService()
         {
             _factory = new ConnectionFactory() { HostName = "localhost" };
             _connection = _factory.CreateConnection();
