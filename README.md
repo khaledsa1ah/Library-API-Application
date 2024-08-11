@@ -54,6 +54,12 @@ This project, developed during my internship at Link Development, is an ASP.NET 
 - Implements service layer for business logic separation.
 - Services for Books, Authors, and Categories.
 
+### AutoMapper
+- Utilizes AutoMapper for object-object mapping, enhancing code maintainability and reducing boilerplate code.
+
+### Global Exception Handling
+- Implements a global exception handling middleware for consistent error responses across the API.
+
 ## Tools and Technologies
 - ASP.NET Core
 - Entity Framework Core
@@ -65,9 +71,7 @@ This project, developed during my internship at Link Development, is an ASP.NET 
 - API Versioning
 - RabbitMQ
 - SQL Server
-
-## Deployment
-- **IIS Deployment**: The application is configured for deployment on Internet Information Services (IIS), enabling easy hosting and management on Windows servers.
+- AutoMapper
 
 ## Getting Started
 1. Clone the repository
@@ -92,6 +96,7 @@ For detailed API documentation, refer to the Swagger UI available at `/swagger/i
 - **Data**: Contains Entity Framework context and entity models
 - **DTOs**: Data Transfer Objects for API requests and responses
 - **Authorization**: Custom authorization attributes and filters
+- **Middleware**: Contains global exception handling middleware
 
 ## Best Practices
 - Dependency Injection
@@ -99,3 +104,5 @@ For detailed API documentation, refer to the Swagger UI available at `/swagger/i
 - Exception handling
 - Code-first database approach
 - Separation of concerns
+- Object-object mapping with AutoMapper
+- Global exception handling for consistent error responses
